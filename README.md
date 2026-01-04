@@ -32,18 +32,6 @@ This application allows users to enter their details, select professional resume
 
 ---
 
-## 📸 Screenshots
-
-_Add screenshots of your app here (optional but recommended)._
-
----
-
-## 🌐 Live Demo
-
-👉 **Live URL:** (Will be added after Netlify deployment)
-
----
-
 ## 📂 Project Setup (Local)
 
 ```bash
