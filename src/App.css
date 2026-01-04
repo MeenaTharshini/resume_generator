@@ -1,0 +1,165 @@
+/* GLOBAL */
+* {
+  box-sizing: border-box;
+}
+
+html, body {
+  width: 100%;
+  overflow-x: hidden;
+}
+
+body {
+  margin: 0;
+  font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+  background: rgb(85, 223, 191);
+
+  display: flex;
+  justify-content: center;   /* CENTER PAGE */
+  align-items: flex-start;
+}
+
+.container {
+  max-width: 1100px;
+  margin: auto;
+  padding: 20px;
+  background-position: auto;
+}
+
+h1 {
+  text-align: center;
+  margin-bottom: 20px;
+  color: #222;
+}
+
+/* FORM SECTION */
+.form {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.form input,
+.form textarea,
+select {
+  padding: 10px;
+  font-size: 14px;
+  border-radius: 4px;
+  border: 1px solid #ccc;
+}
+
+.form textarea {
+  grid-column: span 2;
+  resize: vertical;
+  min-height: 70px;
+}
+
+label {
+  font-weight: 600;
+  margin-right: 10px;
+}
+
+/* RESUME COMMON */
+.resume {
+  background: white;
+  padding: 25mm;
+  margin-top: 20px;
+  box-shadow: 0 0 10px rgba(0,0,0,0.1);
+  width: 210mm;
+  min-height: 297mm;
+  margin: auto;
+}
+
+/* CLASSIC TEMPLATE */
+.resume.classic h2 {
+  text-align: center;
+  margin-bottom: 5px;
+}
+
+.resume.classic > p {
+  text-align: center;
+  font-size: 14px;
+  margin-bottom: 20px;
+}
+
+.resume section {
+  margin-bottom: 15px;
+}
+
+.resume h3 {
+  border-bottom: 2px solid #000;
+  font-size: 15px;
+  margin-bottom: 5px;
+  text-transform: uppercase;
+}
+
+/* MODERN TEMPLATE */
+.modern-layout {
+  display: grid;
+  grid-template-columns: 35% 65%;
+  min-height: 600px;
+}
+
+.modern-layout .left {
+  background: #1f2937;
+  color: white;
+  padding: 20px;
+  min-height: 250mm;
+}
+
+.modern-layout .right {
+  padding: 20px;
+}
+
+.modern-layout h2 {
+  margin-top: 0;
+}
+
+.modern-layout h3 {
+  border-bottom: 2px solid #333;
+  margin-bottom: 5px;
+}
+
+.modern-layout h4 {
+  margin-top: 20px;
+  margin-bottom: 5px;
+}
+
+/* BUTTON */
+button {
+  display: block;
+  margin: 20px auto;
+  padding: 12px 25px;
+  font-size: 16px;
+  background: #2563eb;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+button:hover {
+  background: #1e40af;
+}
+.profile-img {
+  width: 120px;
+  height: 120px;
+  border-radius: 50%;
+  object-fit: cover;
+  display: block;
+  margin: 0 auto 15px;
+}
+
+.modern-img {
+  border-radius: 10px;
+  margin-bottom: 15px;
+}
+
+
+@media (max-width: 900px) {
+  .resume {
+    width: 100%;
+    min-height: auto;
+    padding: 15px;
+  }
+}
