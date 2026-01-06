@@ -1,436 +1,339 @@
-import { useState } from 'react'
-import jsPDF from 'jspdf';
-import html2canvas from 'html2canvas';
+import { useState } from "react";
+import jsPDF from "jspdf";
+import html2canvas from "html2canvas";
 import { Document, Packer, Paragraph, TextRun } from "docx";
 import { saveAs } from "file-saver";
-import './App.css';
+import resumeCSS from "./App.css?inline";
+import "./App.css";
 
 function App() {
   const [template, setTemplate] = useState("classic");
   const [image, setImage] = useState(null);
-  const handleDownloadPDF = async () => {
-  const resume = document.getElementById("resume");
-
-  const canvas = await html2canvas(resume, {
-    scale: 3,          // higher scale for better quality
-    useCORS: true
-  });
-
-  const imgData = canvas.toDataURL("image/png");
-  const pdf = new jsPDF("p", "mm", "a4");
-
-  const pdfWidth = 210;
-  const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
-
-  pdf.addImage(imgData, "PNG", 0, 0, pdfWidth, pdfHeight);
-  pdf.save("resume.pdf");
-};
 
   const [formData, setFormData] = useState({
-    name: '',
-    email: '',
-    phone: '',
-    objective: '',
-    education: '',
-    skills: '',
-    projects: '',
-    certifications: ''
+    name: "",
+    email: "",
+    phone: "",
+    github: "",
+    linkedin: "",
+    objective: "",
+    education: "",
+    skills: "",
+    experience:"",
+    projects: "",
+    certifications: ""
   });
 
-  const handleImageUpload = (e) => {
-    const file = e.target.files[0];
-    if (file) {
-      setImage(URL.createObjectURL(file));
-    }
-  };
-
+  // ---------- INPUT HANDLING ----------
   const handleChange = (e) => {
-    setFormData({
-      ...formData,
-      [e.target.name]: e.target.value
-    });
+    setFormData({ ...formData, [e.target.name]: e.target.value });
   };
-  const handleDownloadWord = async () => {
-  const doc = new Document({
-    sections: [
-      {
-        children: [
-          new Paragraph({ children: [new TextRun({ text: formData.name, bold: true, size: 32 })] }),
-          new Paragraph({ children: [new TextRun({ text: `${formData.email} | ${formData.phone}`, size: 22 })] }),
-          new Paragraph(""),
-          new Paragraph({ children: [new TextRun({ text: "Career Objective", bold: true })] }),
-          new Paragraph(formData.objective || " "),
-          new Paragraph(""),
-          new Paragraph({ children: [new TextRun({ text: "Education", bold: true })] }),
-          new Paragraph(formData.education || " "),
-          new Paragraph(""),
-          new Paragraph({ children: [new TextRun({ text: "Technical Skills", bold: true })] }),
-          new Paragraph(formData.skills || " "),
-          new Paragraph(""),
-          new Paragraph({ children: [new TextRun({ text: "Projects", bold: true })] }),
-          ...formData.projects.split("\n").map(p => new Paragraph(`• ${p}`)),
-          new Paragraph(""),
-          new Paragraph({ children: [new TextRun({ text: "Certifications", bold: true })] }),
-          new Paragraph(formData.certifications || " "),
-        ],
-      },
-    ],
-  });
 
-  const blob = await Packer.toBlob(doc);
-  saveAs(blob, "resume.docx");
-};
+  const handleImage = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => setImage(reader.result);
+    reader.readAsDataURL(file);
+  };
 
-  
-  const handleDownload = async () => {
-  const resume = document.getElementById("resume");
+  // ---------- PDF DOWNLOAD ----------
+  const downloadPDF = async () => {
+    const resume = document.getElementById("resume");
+    const canvas = await html2canvas(resume, { scale: 2, useCORS: true });
+    const imgData = canvas.toDataURL("image/png");
 
-  const canvas = await html2canvas(resume, {
-    scale: 2,          // 🔥 VERY IMPORTANT (improves quality & size)
-    useCORS: true
-  });
+    const pdf = new jsPDF("p", "mm", "a4");
+    const pdfWidth = 210;
+    const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
 
-  const imgData = canvas.toDataURL("image/png");
+    let heightLeft = pdfHeight;
+    let position = 0;
 
-  const pdf = new jsPDF("p", "mm", "a4");
+    pdf.addImage(imgData, "PNG", 0, position, pdfWidth, pdfHeight);
+    heightLeft -= 297;
 
-  const pdfWidth = 210; // A4 width in mm
-  const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
+    while (heightLeft > 0) {
+      position = heightLeft - pdfHeight;
+      pdf.addPage();
+      pdf.addImage(imgData, "PNG", 0, position, pdfWidth, pdfHeight);
+      heightLeft -= 297;
+    }
 
-  pdf.addImage(imgData, "PNG", 0, 0, pdfWidth, pdfHeight);
-  pdf.save("resume.pdf");
-};
+    pdf.save("resume.pdf");
+  };
 
 
+  // ---------- UI ----------
   return (
-    <>
-      <div className="container">
-        <h1>Professional Resume Generator</h1>
-        <h2>*Kindly Put Your Device in Desktop Mode*</h2>
-        <label>Select Resume Template:</label>
-        <select value={template} onChange={(e) => setTemplate(e.target.value)}>
-          <option value="classic">Classic Engineering</option>
-          <option value="ats">ATS / Industry</option>
-          <option value="placement">Placement Pro</option>
-          <option value="split">Modern Split</option>
-          <option value="minimal">Minimal Pro</option>
+    <div className="container">
+      <h1>Professional Resume Generator</h1>
+      <p className="subtitle">Use Desktop Mode for best preview experience</p>
 
-        </select>
+      <label>Select Resume Template:</label>
+      <select value={template} onChange={(e) => setTemplate(e.target.value)}>
+        <option value="classic">Classic</option>
+        <option value="ats">ATS / Industry</option>
+        <option value="placement">Placement Pro</option>
+        <option value="split">Modern Split</option>
+        <option value="timeline">Timeline Accent</option>
 
-        <form className="form">
-          <input type="file" accept="image/*" placeholder="Choose your photo" onChange={handleImageUpload} />
+      </select>
 
-          <input name="name" placeholder="Full Name" onChange={handleChange} />
-          <input name="email" placeholder="Email" onChange={handleChange} />
-          <input name="phone" placeholder="Phone" onChange={handleChange} />
+      <form className="form">
+        <input name="name" placeholder="Full Name" onChange={handleChange} />
+        <input name="email" placeholder="Email" onChange={handleChange} />
+        <input name="phone" placeholder="Phone" onChange={handleChange} />
+        <input name="github" placeholder="GitHub URL" onChange={handleChange} />
+        <input name="linkedin" placeholder="LinkedIn URL" onChange={handleChange} />
+        <textarea name="objective" placeholder="Career Objective" onChange={handleChange} />
+        <textarea name="education" placeholder="Education (one per line)" onChange={handleChange} />
+        <textarea name="skills" placeholder="Skills (separate with | )" onChange={handleChange} />
+        <textarea name="projects" placeholder="Projects (one per line)" onChange={handleChange} />
+        <textarea name="certifications" placeholder="Certifications (one per line)" onChange={handleChange} />
+        <textarea name="experience" placeholder="Experience (if any)" onChange={handleChange} />
 
-          <textarea name="objective" placeholder="Career Objective" onChange={handleChange} />
-          <textarea name="education" placeholder="Education" onChange={handleChange} />
-          <textarea name="projects" placeholder="Projects" onChange={handleChange} />
-          <textarea name="skills" placeholder="Skills(seperate with |)" onChange={handleChange} />
-          <textarea name="certifications" placeholder="Certifications" onChange={handleChange} />
-        </form>
+        <label className="file-label">
+          Upload Profile Photo
+          <input type="file" accept="image/*" onChange={handleImage} hidden />
+        </label>
+      </form>
 
-        {/* RESUME PREVIEW */}
-        <div id="resume" className={`resume ${template}`}>
+      {/* ---------- RESUME PREVIEW ---------- */}
+      <div id="resume" className={`resume ${template} centered`}>
+        {/* Classic Template */}
+        {template === "classic" && (
+          <div className="centered">
+            {image && <img src={image} alt="Profile" className="profile-img" />}
+            <h1>{formData.name || "Your Name"}</h1>
+            <p>{formData.email} | {formData.phone}</p>
+            {(formData.github || formData.linkedin) && (
+              <p>
+                {formData.github && <a href={formData.github} target="_blank" rel="noreferrer">{formData.github}</a>}
+                {formData.github && formData.linkedin && " | "}
+                {formData.linkedin && <a href={formData.linkedin} target="_blank" rel="noreferrer">{formData.linkedin}</a>}
+              </p>
+            )}
+            <h3>Career Objective</h3>
+            <p>{formData.objective}</p>
+            <h3>Education</h3>
+            <ul>{formData.education.split("\n").filter(Boolean).map((edu, i) => <li key={i}>{edu}</li>)}</ul>
+            <h3>Technical Skills</h3>
+            <p>{formData.skills.split("|").filter(Boolean).map(s => s.trim()).join(" | ")}</p>
+            <h3>Projects</h3>
+            <ul>{formData.projects.split("\n").filter(Boolean).map((p, i) => <li key={i}>{p}</li>)}</ul>
+            <h3>Certifications</h3>
+            <ul>{formData.certifications.split("\n").filter(Boolean).map((c, i) => <li key={i}>{c}</li>)}</ul>
+            {formData.experience && (
+  <section>
+    <h3>Experience</h3>
+    <p>{formData.experience}</p>
+  </section>
+)}
 
-          {/* CLASSIC TEMPLATE */}
-          {template === "classic" && (
-            <>
-              {image && <img src={image} alt="Profile" className="profile-img" />}
+          </div>
+        )}
 
-              <h2>{formData.name}</h2>
-              <p>{formData.email} | {formData.phone}</p>
+        {/* ATS / Industry Template */}
+        {template === "ats" && (
+          <div className="ats-layout centered">
+            <header className="ats-header">
+              {image && <img src={image} alt="Profile" className="ats-img" />}
+              <div>
+                <h1>{formData.name || "Your Name"}</h1>
+                <p>{formData.email} | {formData.phone}</p>
+              </div>
+            </header>
+            {(formData.github || formData.linkedin) && (
+              <p>
+                {formData.github && <a href={formData.github} target="_blank" rel="noreferrer">
+    {formData.github}
+  </a>
+}
+                {formData.github && formData.linkedin && " | "}
+                {formData.linkedin && <a href={formData.linkedin} target="_blank" rel="noreferrer">{formData.linkedin}</a>}
+              </p>
+            )}
+            <h3>Career Objective</h3>
+            <p>{formData.objective}</p>
+            <h3>Education</h3>
+            <ul>{formData.education.split("\n").filter(Boolean).map((edu, i) => <li key={i}>{edu}</li>)}</ul>
+            <h3>Technical Skills</h3>
+            <p>{formData.skills.split("|").map(s => s.trim()).filter(Boolean).join(" | ")
+  }
+</p>
+            <h3>Projects</h3>
+            <ul>{formData.projects.split("\n").filter(Boolean).map((p, i) => <li key={i}>{p}</li>)}</ul>
+            <h3>Certifications</h3>
+            <ul>{formData.certifications.split("\n").filter(Boolean).map((c, i) => <li key={i}>{c}</li>)}</ul>
+            {formData.experience && (
+  <section>
+    <h3>Professional Experience</h3>
+    <p>{formData.experience}</p>
+  </section>
+)}
 
-              <section>
-                <h3>Career Objective</h3>
-                <p>{formData.objective}</p>
-              </section>
+          </div>
+        )}
 
-              <section>
-                <h3>Education</h3>
-                <ul>
-  {formData.education.split("\n").map((edu, i) => (
-    <li key={i}>{edu}</li>
-  ))}
-</ul>
-              </section>
+        {/* Placement Template */}
+        {template === "placement" && (
+          <div className="placement-layout centered">
+            <div className="placement-header centered">
+              <div>
+                <h1>{formData.name || "Your Name"}</h1>
+                <p>{formData.email} | {formData.phone}</p>
+              </div>
+              {image && <img src={image} alt="Profile" className="placement-img" />}
+            </div>
+            {(formData.github || formData.linkedin) && (
+              <p>
+                {formData.github && <a href={formData.github} target="_blank" rel="noreferrer">{formData.github}</a>}
+                {formData.github && formData.linkedin && " | "}
+                {formData.linkedin && <a href={formData.linkedin} target="_blank" rel="noreferrer">{formData.linkedin}</a>}
+              </p>
+            )}
+            <h3>Career Objective</h3>
+            <p>{formData.objective}</p>
+            <h3>Education</h3>
+            <ul>{formData.education.split("\n").filter(Boolean).map((edu, i) => <li key={i}>{edu}</li>)}</ul>
+            <h3>Projects</h3>
+            <ul>{formData.projects.split("\n").filter(Boolean).map((p, i) => <li key={i}>{p}</li>)}</ul>
+            <h3>Technical Skills</h3>
+            <p>{formData.skills.split("|").filter(Boolean).map(s => s.trim()).join(" | ")}</p>
+            <h3>Certifications</h3>
+            <ul>{formData.certifications.split("\n").filter(Boolean).map((c, i) => <li key={i}>{c}</li>)}</ul>
+            {formData.experience && (
+  <section>
+    <h3>Internships / Experience</h3>
+    <p>{formData.experience}</p>
+  </section>
+)}
 
-              <section>
-                <h3>Technical Skills</h3>
-                <p>{formData.skills}</p>
-              </section>
+          </div>
+        )}
+        {template === "timeline" && (
+    <div className="timeline-layout">
+      <div className="timeline-accent"></div>
 
-              <section>
-                <h3>Projects</h3>
-                <ul>
-        {formData.projects.split("\n").map((p, i) => (
-          <li key={i}>{p}</li>
-        ))}
-      </ul>
-              </section>
+      <div className="timeline-content">
+        {image && <img src={image} className="timeline-img" alt="Profile" />}
 
-              <section>
-                <h3>Certifications</h3>
-                <ul>
-        {formData.certifications.split("\n").map((cert, i) => (
-          <li key={i}>{cert}</li>
-        ))}
-      </ul>
-              </section>
-            </>
-          )}
-          
-          {/* ATS / INDUSTRY TEMPLATE */}
-          {template === "ats" && (
-          <div className="ats-layout">
-
-    <header className="ats-header">
-      {image && <img src={image} alt="Profile" className="ats-img" />}
-      <div>
-        <h2>{formData.name}</h2>
+        <h1>{formData.name || "Your Name"}</h1>
         <p>{formData.email} | {formData.phone}</p>
-      </div>
-    </header>
 
-    <section>
-      <h3>Career Objective</h3>
-      <p>{formData.objective}</p>
-    </section>
+        {(formData.github || formData.linkedin) && (
+          <p>
+            {formData.github && <a href={formData.github}>{formData.github}</a>}
+            {formData.github && formData.linkedin && " | "}
+            {formData.linkedin && <a href={formData.linkedin}>{formData.linkedin}</a>}
+          </p>
+        )}
 
-    <section>
-      <h3>Education</h3>
-      <ul>
-  {formData.education.split("\n").map((edu, i) => (
-    <li key={i}>{edu}</li>
-  ))}
-</ul>
-    </section>
-
-    <section>
-      <h3>Technical Skills</h3>
-      <ul>
-  {formData.skills
-    .split("|")
-    .map(s => s.trim())
-    .filter(Boolean)
-    .map((s, i) => (
-      <li key={i}>{s}</li>
-    ))}
-</ul>
-    </section>
-
-    <section>
-      <h3>Projects</h3>
-      <ul>
-        {formData.projects.split("\n").map((p, i) => (
-          <li key={i}>{p}</li>
-        ))}
-      </ul>
-    </section>
-
-    <section>
-      <h3>Certifications</h3>
-      <ul>
-        {formData.certifications.split("\n").map((cert, i) => (
-          <li key={i}>{cert}</li>
-        ))}
-      </ul>
-    </section>
-
-  </div>
-          )}
-
-          {/* PLACEMENT / CAMPUS TEMPLATE */}
-          {template === "placement" && (
-  <div className="placement-layout">
-
-    <div className="placement-header">
-      <div>
-        <h2>{formData.name}</h2>
-        <p>{formData.email} | {formData.phone}</p>
-      </div>
-      {image && <img src={image} alt="Profile" className="placement-img" />}
-    </div>
-
-    <section>
-      <h3>Career Objective</h3>
-      <p>{formData.objective}</p>
-    </section>
-
-    <section>
-      <h3>Education</h3>
-      <ul>
-  {formData.education.split("\n").map((edu, i) => (
-    <li key={i}>{edu}</li>
-  ))}
-</ul>
-    </section>
-
-    <section>
-      <h3>Projects</h3>
-      <ul>
-        {formData.projects.split('\n').map((proj, i) => (
-          <li key={i}>{proj}</li>
-        ))}
-      </ul>
-    </section>
-
-    <section className="two-column">
-      <div>
-        <h3>Technical Skills</h3>
-        <ul>
-  {formData.skills
-    .split("|")
-    .map(s => s.trim())
-    .filter(Boolean)
-    .map((s, i) => (
-      <li key={i}>{s}</li>
-    ))}
-</ul>
-      </div>
-
-      <div>
-        <h3>Certifications</h3>
-        <ul>
-        {formData.certifications.split("\n").map((cert, i) => (
-          <li key={i}>{cert}</li>
-        ))}
-      </ul>
-      </div>
-    </section>
-
-  </div>
-          )}
-
-          {/* MODERN SPLIT TEMPLATE */}
-          {template === "split" && (
-  <div className="split-layout">
-
-    <div className="split-left">
-      {image && <img src={image} alt="Profile" className="split-img" />}
-
-      <h3>Contact</h3>
-      <p>{formData.email}</p>
-      <p>{formData.phone}</p>
-
-      <h3>Skills</h3>
-      <ul>
-  {formData.skills
-    .split("|")
-    .map(s => s.trim())
-    .filter(Boolean)
-    .map((s, i) => (
-      <li key={i}>{s}</li>
-    ))}
-</ul>
-
-      <h3>Certifications</h3>
-      <p>{formData.certifications}</p>
-    </div>
-
-    <div className="split-right">
-      <h1>{formData.name}</h1>
-
-      <section>
         <h3>Career Objective</h3>
         <p>{formData.objective}</p>
-      </section>
 
-      <section>
         <h3>Education</h3>
         <ul>
-  {formData.education.split("\n").map((edu, i) => (
-    <li key={i}>{edu}</li>
-  ))}
-</ul>
-      </section>
-
-      <section>
-        <h3>Projects</h3>
-        <ul>
-          {formData.projects.split('\n').map((p, i) => (
-            <li key={i}>{p}</li>
+          {formData.education.split("\n").filter(Boolean).map((e,i)=>(
+            <li key={i}>{e}</li>
           ))}
         </ul>
-      </section>
-    </div>
 
-  </div>
-          )}
+        {formData.experience && (
+          <>
+            <h3>Experience</h3>
+            <p style={{whiteSpace:"pre-line"}}>{formData.experience}</p>
+          </>
+        )}
+        {formData.certifications && (
+  <section>
+    <h3>Certifications</h3>
+    <ul>
+      {formData.certifications
+        .split("\n")
+        .filter(Boolean)
+        .map((c, i) => (
+          <li key={i}>{c}</li>
+        ))}
+    </ul>
+  </section>
+)}
 
-          {template === "minimal" && (
-  <div className="minimal-layout">
-
-    <div className="minimal-header">
-      {image && <img src={image} alt="Profile" className="minimal-img" />}
-      <div>
-        <h1>{formData.name}</h1>
-        <p>{formData.email} | {formData.phone}</p>
-      </div>
-    </div>
-
-    <section>
-      <h3>Career Objective</h3>
-      <p>{formData.objective}</p>
-    </section>
-
-    <section>
-      <h3>Education</h3>
-      <ul>
-  {formData.education.split("\n").map((edu, i) => (
-    <li key={i}>{edu}</li>
-  ))}
-</ul>
-
-    </section>
-
-    <section>
-      <h3>Technical Skills</h3>
-      <ul>
-  {formData.skills
-    .split("|")
-    .map(s => s.trim())
-    .filter(Boolean)
-    .map((s, i) => (
-      <li key={i}>{s}</li>
-    ))}
-</ul>
-
-    </section>
-
-    <section>
-      <h3>Projects</h3>
-      <ul>
-        {formData.projects.split("\n").map((p, i) => (
+        {formData.projects && (
+  <section>
+    <h3>Projects</h3>
+    <ul>
+      {formData.projects
+        .split("\n")
+        .filter(Boolean)
+        .map((p, i) => (
           <li key={i}>{p}</li>
         ))}
-      </ul>
-    </section>
+    </ul>
+  </section>
+)}
 
-    <section>
-      <h3>Certifications</h3>
-      <ul>
-        {formData.certifications.split("\n").map((cert, i) => (
-          <li key={i}>{cert}</li>
-        ))}
-      </ul>
-    </section>
-
-  </div>
-          )}
-
-        </div>
-
-        <button onClick={handleDownload} style={{ marginTop: '10px' }}>
-          Download as PDF
-        </button>
-        <button onClick={handleDownloadWord}>
-         Download as Word (Editable)
-        </button>
-
+        <h3>Skills</h3>
+        <p>{formData.skills.split("|").map(s=>s.trim()).join(" | ")}</p>
       </div>
-    </>
+    </div>
+  )}
+        {/* Modern Split Template */}
+        {template === "split" && (
+          <div className="split-layout centered">
+            <div className="split-left centered">
+              {image && <img src={image} alt="Profile" className="split-img" />}
+              <h3>Contact</h3>
+              <p>{formData.email}</p>
+              <p>{formData.phone}</p>
+              {(formData.github || formData.linkedin) && (
+                <p>
+                  {formData.github && <a href={formData.github} target="_blank" rel="noreferrer">{formData.github}</a>}
+                  {formData.github && formData.linkedin && " | "}
+                  {formData.linkedin && <a href={formData.linkedin} target="_blank" rel="noreferrer">{formData.linkedin}</a>}
+                </p>
+              )}
+              <h3>Skills</h3>
+              <p>{formData.skills.split("|").filter(Boolean).map(s => s.trim()).join(" | ")}</p>
+              {formData.certifications && (
+              <>
+               <h3>Certifications</h3>
+               <ul>
+               {formData.certifications.split("\n").filter(Boolean).map((cert, i) => (
+               <li key={i}>{cert}</li>))}
+               </ul>
+               </>
+              )}
+
+              </div>
+              <div className="split-right centered">
+              <h1>{formData.name}</h1>
+              <h3>Career Objective</h3>
+              <p>{formData.objective}</p>
+              <h3>Education</h3>
+              <ul>{formData.education.split("\n").filter(Boolean).map((edu, i) => <li key={i}>{edu}</li>)}</ul>
+              <h3>Projects</h3>
+              <ul>{formData.projects.split("\n").filter(Boolean).map((p, i) => <li key={i}>{p}</li>)}</ul>
+              {formData.experience && (
+              <section>
+              <h3>Experience</h3>
+              <p>{formData.experience}</p>
+              </section>
+              )}
+
+            </div>
+          </div>
+        )}
+        
+        
+      </div>
+      
+      {/* ---------- BUTTONS AT BOTTOM ---------- */}
+      <div className="buttons centered">
+        <button onClick={downloadPDF}>Download PDF</button>
+      </div>
+    </div>
   );
 }
 
