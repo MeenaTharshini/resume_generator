@@ -23,11 +23,22 @@ function App() {
     projects: "",
     certifications: ""
   });
+  const [role, setRole] = useState("student");
+  const [field, setField] = useState("Computer Science");
+
 
   // ---------- INPUT HANDLING ----------
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
+  const formatSkills = (skills) => {
+  return skills
+    .replace(/,/g, "|")     // commas → |
+    .split("|")             // split
+    .map(s => s.trim())     // remove spaces
+    .filter(Boolean)        // remove empty
+    .join(" | ");           // join nicely
+};
 
   const handleImage = (e) => {
     const file = e.target.files[0];
@@ -62,15 +73,127 @@ function App() {
 
     pdf.save("resume.pdf");
   };
+  const generateObjective = () => {
+  const templates = {
+    student: `Motivated ${field} student seeking opportunities to apply academic knowledge, technical skills, and problem-solving abilities in a professional environment.`,
+    
+    intern: `Enthusiastic ${field} intern eager to gain hands-on experience and contribute to real-world projects while continuously learning and improving technical skills.`,
+    
+    developer: `Detail-oriented ${field} professional with a strong foundation in software development, aiming to contribute to innovative projects and deliver scalable solutions.`
+  };
+
+  setFormData({
+    ...formData,
+    objective: templates[role]
+  });
+};
+
+  //-------------------Project description----------
+  const [enhancedProjects, setEnhancedProjects] = useState("");
+
+  const enhanceProjects = () => {
+  if (!formData.projects.trim()) return;
+
+  // STEP 1: Extract ONLY real project titles
+  const projectTitles = formData.projects
+    .split("\n")
+    .map(line => line.trim())
+    .filter(line =>
+      line &&
+      !line.startsWith("-") &&
+      !line.startsWith("GitHub:") &&
+      !line.startsWith("Live Demo:") &&
+      !line.startsWith("Tech Stack") &&
+      !line.includes(".") // 🚨 KEY FIX
+    );
+
+  // STEP 2: Build clean enhanced output
+  const enhanced = projectTitles
+    .map(project => (
+`${project}
+GitHub: https://github.com/your-username/${project.toLowerCase().replace(/\s+/g, "-")}
+Live Demo: https://your-live-link.com
+Tech Stack: Python | React | HTML | CSS
+- Designed and developed ${project} using modern technologies.
+- Implemented core functionalities with a focus on usability and performance.
+- Applied best practices to ensure scalability and maintainability.`
+    ))
+    .join("\n\n");
+
+  setFormData({ ...formData, projects: enhanced });
+};
+
+
+const renderProjects = () => {
+  const lines = formData.projects.split("\n").filter(Boolean);
+  let projectCount = 0;
+
+  return lines.map((line, i) => {
+    // Project Title → NUMBER IT
+    if (
+      !line.startsWith("-") &&
+      !line.startsWith("GitHub:") &&
+      !line.startsWith("Live Demo:") &&
+      !line.startsWith("Tech Stack")
+    ) {
+      projectCount += 1;
+      return (
+        <div
+          key={i}
+          style={{ fontWeight: "600", marginTop: "12px" }}
+        >
+          {projectCount}. {line}
+        </div>
+      );
+    }
+
+    // GitHub link
+    if (line.startsWith("GitHub:")) {
+      const url = line.replace("GitHub:", "").trim();
+      return (
+        <div key={i} style={{ marginLeft: "20px" }}>
+          <strong>GitHub:</strong>{" "}
+          <a href={url} target="_blank" rel="noreferrer">{url}</a>
+        </div>
+      );
+    }
+
+    // Live demo link
+    if (line.startsWith("Live Demo:")) {
+      const url = line.replace("Live Demo:", "").trim();
+      return (
+        <div key={i} style={{ marginLeft: "20px" }}>
+          <strong>Live Demo:</strong>{" "}
+          <a href={url} target="_blank" rel="noreferrer">{url}</a>
+        </div>
+      );
+    }
+
+    // Description bullet
+    if (line.startsWith("-")) {
+      return (
+        <div key={i} style={{ marginLeft: "30px" }}>
+          {line}
+        </div>
+      );
+    }
+
+    // Tech Stack
+    return (
+      <div key={i} style={{ marginLeft: "20px" }}>
+        {line}
+      </div>
+    );
+  });
+};
 
 
   // ---------- UI ----------
   return (
     <div className="container">
-      <h1>Professional Resume Generator</h1>
-      <p className="subtitle">Use Desktop Mode for best preview experience</p>
+      <h1>Resume Generator</h1>
 
-      <label>Select Resume Template:</label>
+      <h4>Select Resume Template:</h4>
       <select value={template} onChange={(e) => setTemplate(e.target.value)}>
         <option value="classic">Classic</option>
         <option value="ats">ATS / Industry</option>
@@ -79,17 +202,47 @@ function App() {
         <option value="timeline">Timeline Accent</option>
 
       </select>
-
       <form className="form">
         <input name="name" placeholder="Full Name" onChange={handleChange} />
         <input name="email" placeholder="Email" onChange={handleChange} />
         <input name="phone" placeholder="Phone" onChange={handleChange} />
-        <input name="github" placeholder="GitHub URL" onChange={handleChange} />
-        <input name="linkedin" placeholder="LinkedIn URL" onChange={handleChange} />
-        <textarea name="objective" placeholder="Career Objective" onChange={handleChange} />
         <textarea name="education" placeholder="Education (one per line)" onChange={handleChange} />
+        <section>
+        <textarea name="projects" placeholder="Projects (one per line)" value={formData.projects} onChange={handleChange} />
+        <button
+           type="button"
+           className="enhance-btn"
+           onClick={enhanceProjects}
+        >Enhance Project Description
+        </button>
+      
+
+        </section>
+    <div className="objective-tools">
+        <textarea name="objective" placeholder="Career Objective" onChange={handleChange} />
+       
+       <select value={role} onChange={(e) => setRole(e.target.value)}>
+       <option value="student">Student</option>
+       <option value="intern">Intern</option>
+       <option value="developer">Developer</option>
+       </select>
+
+  <select value={field} onChange={(e) => setField(e.target.value)}>
+    <option>Computer Science</option>
+    <option>Artificial Intelligence</option>
+    <option>Data Science</option>
+    <option>Full Stack Development</option>
+    <option>Cyber Security</option>
+  </select>
+
+  <button type="button" onClick={generateObjective}>
+    Generate Objective
+  </button>
+</div>
+         <input name="github" placeholder="GitHub URL" onChange={handleChange} />
+        <input name="linkedin" placeholder="LinkedIn URL" onChange={handleChange} />
         <textarea name="skills" placeholder="Skills (separate with | )" onChange={handleChange} />
-        <textarea name="projects" placeholder="Projects (one per line)" onChange={handleChange} />
+
         <textarea name="certifications" placeholder="Certifications (one per line)" onChange={handleChange} />
         <textarea name="experience" placeholder="Experience (if any)" onChange={handleChange} />
 
@@ -100,6 +253,7 @@ function App() {
       </form>
 
       {/* ---------- RESUME PREVIEW ---------- */}
+      <h2>Preview</h2>
       <div id="resume" className={`resume ${template} centered`}>
         {/* Classic Template */}
         {template === "classic" && (
@@ -119,17 +273,27 @@ function App() {
             <h3>Education</h3>
             <ul>{formData.education.split("\n").filter(Boolean).map((edu, i) => <li key={i}>{edu}</li>)}</ul>
             <h3>Technical Skills</h3>
-            <p>{formData.skills.split("|").filter(Boolean).map(s => s.trim()).join(" | ")}</p>
+            <p>{formatSkills(formData.skills)}</p>
+            <section>
             <h3>Projects</h3>
-            <ul>{formData.projects.split("\n").filter(Boolean).map((p, i) => <li key={i}>{p}</li>)}</ul>
-            <h3>Certifications</h3>
-            <ul>{formData.certifications.split("\n").filter(Boolean).map((c, i) => <li key={i}>{c}</li>)}</ul>
+            {renderProjects()}
+            </section>
+
+             {formData.certifications && (
+              <section>
+               <h3>Certifications</h3>
+               <ul>
+               {formData.certifications.split("\n").filter(Boolean).map((cert, i) => (
+               <li key={i}>{cert}</li>))}
+               </ul>
+               </section>
+              )}
             {formData.experience && (
-  <section>
-    <h3>Experience</h3>
-    <p>{formData.experience}</p>
-  </section>
-)}
+          <>
+            <h3>Experience</h3>
+            <p style={{whiteSpace:"pre-line"}}>{formData.experience}</p>
+          </>
+        )}
 
           </div>
         )}
@@ -159,19 +323,36 @@ function App() {
             <h3>Education</h3>
             <ul>{formData.education.split("\n").filter(Boolean).map((edu, i) => <li key={i}>{edu}</li>)}</ul>
             <h3>Technical Skills</h3>
-            <p>{formData.skills.split("|").map(s => s.trim()).filter(Boolean).join(" | ")
-  }
-</p>
-            <h3>Projects</h3>
-            <ul>{formData.projects.split("\n").filter(Boolean).map((p, i) => <li key={i}>{p}</li>)}</ul>
-            <h3>Certifications</h3>
-            <ul>{formData.certifications.split("\n").filter(Boolean).map((c, i) => <li key={i}>{c}</li>)}</ul>
+            <p>{formatSkills(formData.skills)}</p>
+            <section>
+              <h3>Projects</h3>
+              {formData.projects.split("\n").filter(Boolean).map((line, i) => {
+              const isDescription = line.startsWith("-");
+              return isDescription ? (
+              <div key={i} style={{ marginLeft: "20px" }}>{line}
+              </div>
+              ) : (
+              <div key={i} style={{ fontWeight: "600", marginTop: "10px" }}>
+              {line}
+              </div>
+              );
+              })}
+            </section>
+             {formData.certifications && (
+              <section>
+               <h3>Certifications</h3>
+               <ul>
+               {formData.certifications.split("\n").filter(Boolean).map((cert, i) => (
+               <li key={i}>{cert}</li>))}
+               </ul>
+               </section>
+              )}
             {formData.experience && (
-  <section>
-    <h3>Professional Experience</h3>
-    <p>{formData.experience}</p>
-  </section>
-)}
+          <>
+            <h3>Experience</h3>
+            <p style={{whiteSpace:"pre-line"}}>{formData.experience}</p>
+          </>
+        )}
 
           </div>
         )}
@@ -197,18 +378,37 @@ function App() {
             <p>{formData.objective}</p>
             <h3>Education</h3>
             <ul>{formData.education.split("\n").filter(Boolean).map((edu, i) => <li key={i}>{edu}</li>)}</ul>
-            <h3>Projects</h3>
-            <ul>{formData.projects.split("\n").filter(Boolean).map((p, i) => <li key={i}>{p}</li>)}</ul>
+            <section>
+              <h3>Projects</h3>
+              {formData.projects.split("\n").filter(Boolean).map((line, i) => {
+              const isDescription = line.startsWith("-");
+              return isDescription ? (
+              <div key={i} style={{ marginLeft: "20px" }}>{line}
+              </div>
+              ) : (
+              <div key={i} style={{ fontWeight: "600", marginTop: "10px" }}>
+              {line}
+              </div>
+              );
+              })}
+            </section>
             <h3>Technical Skills</h3>
-            <p>{formData.skills.split("|").filter(Boolean).map(s => s.trim()).join(" | ")}</p>
-            <h3>Certifications</h3>
-            <ul>{formData.certifications.split("\n").filter(Boolean).map((c, i) => <li key={i}>{c}</li>)}</ul>
+            <p>{formatSkills(formData.skills)}</p>
+            {formData.certifications && (
+              <section>
+               <h3>Certifications</h3>
+               <ul>
+               {formData.certifications.split("\n").filter(Boolean).map((cert, i) => (
+               <li key={i}>{cert}</li>))}
+               </ul>
+               </section>
+              )}
             {formData.experience && (
-  <section>
-    <h3>Internships / Experience</h3>
-    <p>{formData.experience}</p>
-  </section>
-)}
+          <>
+            <h3>Experience</h3>
+            <p style={{whiteSpace:"pre-line"}}>{formData.experience}</p>
+          </>
+        )}
 
           </div>
         )}
@@ -260,22 +460,23 @@ function App() {
   </section>
 )}
 
-        {formData.projects && (
-  <section>
-    <h3>Projects</h3>
-    <ul>
-      {formData.projects
-        .split("\n")
-        .filter(Boolean)
-        .map((p, i) => (
-          <li key={i}>{p}</li>
-        ))}
-    </ul>
-  </section>
-)}
+      <section>
+              <h3>Projects</h3>
+              {formData.projects.split("\n").filter(Boolean).map((line, i) => {
+              const isDescription = line.startsWith("-");
+              return isDescription ? (
+              <div key={i} style={{ marginLeft: "20px" }}>{line}
+              </div>
+              ) : (
+              <div key={i} style={{ fontWeight: "600", marginTop: "10px" }}>
+              {line}
+              </div>
+              );
+              })}
+            </section>
 
         <h3>Skills</h3>
-        <p>{formData.skills.split("|").map(s=>s.trim()).join(" | ")}</p>
+        <p>{formatSkills(formData.skills)}</p>
       </div>
     </div>
   )}
@@ -295,15 +496,15 @@ function App() {
                 </p>
               )}
               <h3>Skills</h3>
-              <p>{formData.skills.split("|").filter(Boolean).map(s => s.trim()).join(" | ")}</p>
+              <p>{formatSkills(formData.skills)}</p>
               {formData.certifications && (
-              <>
+              <section>
                <h3>Certifications</h3>
                <ul>
                {formData.certifications.split("\n").filter(Boolean).map((cert, i) => (
                <li key={i}>{cert}</li>))}
                </ul>
-               </>
+               </section>
               )}
 
               </div>
@@ -313,15 +514,26 @@ function App() {
               <p>{formData.objective}</p>
               <h3>Education</h3>
               <ul>{formData.education.split("\n").filter(Boolean).map((edu, i) => <li key={i}>{edu}</li>)}</ul>
-              <h3>Projects</h3>
-              <ul>{formData.projects.split("\n").filter(Boolean).map((p, i) => <li key={i}>{p}</li>)}</ul>
-              {formData.experience && (
               <section>
-              <h3>Experience</h3>
-              <p>{formData.experience}</p>
-              </section>
-              )}
-
+              <h3>Projects</h3>
+              {formData.projects.split("\n").filter(Boolean).map((line, i) => {
+              const isDescription = line.startsWith("-");
+              return isDescription ? (
+              <div key={i} style={{ marginLeft: "20px" }}>{line}
+              </div>
+              ) : (
+              <div key={i} style={{ fontWeight: "600", marginTop: "10px" }}>
+              {line}
+              </div>
+              );
+              })}
+            </section>
+              {formData.experience && (
+          <>
+            <h3>Experience</h3>
+            <p style={{whiteSpace:"pre-line"}}>{formData.experience}</p>
+          </>
+        )}
             </div>
           </div>
         )}
@@ -331,6 +543,7 @@ function App() {
       
       {/* ---------- BUTTONS AT BOTTOM ---------- */}
       <div className="buttons centered">
+        <h4>*Kindly Use Desktop Mode for best preview and download experience*</h4>
         <button onClick={downloadPDF}>Download PDF</button>
       </div>
     </div>

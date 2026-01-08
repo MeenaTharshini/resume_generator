@@ -224,6 +224,7 @@ button:hover {
 
 .split-left {
   width: 40%;
+  height: 100%;
   min-height: 297mm;
   background: #f5f5f5;
   display: flex;
